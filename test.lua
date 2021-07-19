@@ -1,8 +1,8 @@
 local start_time = love.timer.getTime()
 
-test = {}
+local test = {}
 
-function getTime()
+local function getTime()
   return string.format("%.4f", (love.timer.getTime() - start_time) * 1660)
 end
 
@@ -12,7 +12,7 @@ end
 
 -- log输出格式化
 local function logPrint(str)
-  str = os.date("Log output date: %Y-%m-%d %H:%M:%S \n", os.time()) .. str
+  str = os.date("Log output: \n") .. str
   print(getTime() .. ">>>" .. str)
 end
 
@@ -96,12 +96,12 @@ function test.printTable(...)
         stack:pop()
       end
       table2String(root)
-      table.insert(temp, "}\n------------------------- printTable end -------------------------")
+      table.insert(temp, "}\n------------------------------------------------------------------")
       logPrint(table.concat(temp))
     else
       logPrint(
         "----------------------- printString start ------------------------\n" ..
-          tostring(root) .. "\n------------------------ printString end -------------------------"
+          tostring(root) .. "\n-----------------------------------------------------------------"
       )
     end
   end
@@ -111,6 +111,7 @@ setmetatable(
   test,
   {
     __call = function(self, t)
+      print("\n")
       if type(t) == "table" then
         self.printTable(t)
       else

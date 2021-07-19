@@ -1,17 +1,17 @@
 local block = require "src.objects.block"
 
-local mover = {}
+local counter = {}
 
-mover.new = function(data)
+counter.new = function(data)
   local tmp = block.new(data)
-  tmp.icon = "move"
-  tmp.img = "block"
-  tmp.type = "mover"
+  tmp.img = "button"
+  tmp.type = "counter"
   tmp.can_win = true
   tmp.can_move = true
   tmp.can_push = true
+  tmp.count = data.count or 0
 
   return tmp
 end
 
-return mover
+return counter

@@ -11,8 +11,35 @@ helper.add_dir = function(pos, dir)
     return {x = pos.x, y = pos.y + 1}
   elseif dir == "left" then
     return {x = pos.x - 1, y = pos.y}
-  else
+  elseif dir == "right" then
     return {x = pos.x + 1, y = pos.y}
+  end
+end
+
+helper.dir_to_rot = function(dir)
+  if dir == "up" then
+    return 0
+  elseif dir == "down" then
+    return 180
+  elseif dir == "left" then
+    return 270
+  elseif dir == "right" then
+    return 90
+  end
+end
+
+helper.rot_to_dir = function(rot)
+  while rot >= 360 do
+    rot = rot - 360
+  end
+  if rot == 0 then
+    return "up"
+  elseif rot == 90 then
+    return "right"
+  elseif rot == 180 then
+    return "down"
+  elseif rot == 270 then
+    return "left"
   end
 end
 
@@ -52,6 +79,18 @@ helper.clone = function(object)
     return setmetatable(new_table, getmetatable(obj))
   end
   return copy(object)
+end
+
+helper.print_map = function(map)
+  local str = "\n"
+  for i, v in ipairs(map) do
+    str = str .. string.format("[%d]:{\n", i)
+    for j, w in ipairs(v) do
+      str = str .. string.format("  [%d] = %s\n", j, w.uuid and w.type or "{}")
+    end
+    str = str .. "}\n"
+  end
+  Log(str)
 end
 
 return helper

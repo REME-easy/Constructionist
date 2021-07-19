@@ -41,8 +41,6 @@ love.load = function(args)
   Lib:load()
   Inp:load()
   Con.set_state(menu, true)
-  local s = "abcde"
-  Log(s[3])
 end
 
 love.update = function(dt)
@@ -72,14 +70,14 @@ end
 love.draw = function()
   local state = Con.cur_state
   local timer = Con.timer
+  local width = love.graphics.getWidth()
+  local height = love.graphics.getHeight()
   if Con.cur_state then
     Con.cur_state:draw()
   end
   UI.draw()
   if timer > 0 then
-    local width = love.graphics.getWidth()
-    local height = love.graphics.getHeight()
-    love.graphics.setColor(0, 0, 0, 1 - timer)
+    love.graphics.setColor(0, 0, 0, 1 - timer / 0.4)
     love.graphics.rectangle("fill", 0, 0, width, height)
   end
 end

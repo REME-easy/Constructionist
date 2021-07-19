@@ -1,6 +1,5 @@
 local library = {
   final = {},
-  symbols = {},
   levels = {}
 }
 
@@ -11,6 +10,7 @@ library.load = function(self)
   Log("loading blocks")
   for _, v in ipairs(files) do
     self.final[v.name] = require(v.path)
+    self.final[v.name].category = v.category
   end
   self.final["block"] = require "src.objects.block"
   Log(self.final)
@@ -29,6 +29,7 @@ library.load = function(self)
       end
     end
   end
+  Log(self.levels)
 end
 
 library.new_final = function(self, id, data)
@@ -41,6 +42,12 @@ end
 library.new_final_func = function(self, id)
   if self.final[id] then
     return self.final[id].new
+  end
+end
+
+library.load_level = function(self, series, id)
+  if self.levels[series] and self.levels[series][id] then
+    return self.levels[series][id]
   end
 end
 

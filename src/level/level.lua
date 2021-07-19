@@ -1,16 +1,20 @@
 local inspector = require "src.level.inspector"
 local screen = require "src.level.screen"
+local select = require "src.states.select"
 
 local level = {}
 
 level.new = function(self, data)
   local tmp = {
+    name = "",
     screens = {},
     actions = {},
     history = {},
+    tips = {},
     cursor = nil,
     focus_screen = 1,
     inspect_mode = false,
+    is_victory = false,
     --
     update = function(self, dt)
       local actions = self.actions
@@ -45,6 +49,20 @@ level.new = function(self, data)
       screens[#screens + 1] = s
       s.id = #screens
       return s
+    end,
+    --
+    add_screen_inst = function(self, sc)
+      local screens = self.screens
+      screens[#screens + 1] = sc
+      sc.id = #screens
+      return sc
+    end,
+    --
+    win = function(self)
+      if not self.is_victory then
+        self.is_victory = true
+        Con.set_state(select)
+      end
     end,
     --
     add_bot_action = function(self, action)
@@ -102,13 +120,10 @@ level.new = function(self, data)
         local any_down = left or right or up or down
 
         if any_down then
-          self:publish_signal({dir = key})
+          self:publish_signal({type = "move", dir = key})
         end
-        self:add_bot_action(
-          function()
-            self:publish_process({})
-          end
-        )
+
+        self:publish_process({})
       end
     end
   }
@@ -118,6 +133,7 @@ end
 
 level.load_from_lua = function(self, lua)
   local tmp = self:new()
+  tmp.name = Tr("level", lua.name_id).name
   local b = lua.blocks
   local maps = lua.maps
   local blocks = {_ = {}}
@@ -127,32 +143,36 @@ level.load_from_lua = function(self, lua)
       blocks[v.sym] = {func = val, data = v.data, child = v.child}
     end
   end
-
-  local function add_screen(k, v)
-    local width = #(v[1])
-    local height = #v
-    local draw = k == 1
-    local s = tmp:add_screen({width = width, height = height, draw = draw})
+  local index = 0
+  local function add_screen(v)
+    index = index + 1
+    local width = #(v.map[1])
+    local height = #v.map
+    local draw = index == 1
+    -- TODO
+    local s = tmp:add_screen({width = width, height = height, draw = true})
+    if not draw then
+      s:to_position(index - 1)
+    end
     for g, group in pairs(v) do
       for i, row in ipairs(group) do
         for j = 1, #row do
           local c = utf8.sub(row, j, j)
           local tb = blocks[c]
-          if tb then
-            s:add_block(i, j, tb({}), g)
-            if b.child then
-              add_screen(tb.child, maps[tb.child])
-              s:add_screen_to_block(i, j, #(tmp.screens), g)
+          if tb and tb.func then
+            s:add_block(j, i, tb:func({}), g)
+            if tb.child then
+              s:add_screen_to_block(j, i, add_screen(maps[tb.child]), g)
             end
           end
         end
       end
     end
+    return s
   end
 
-  for k, v in ipairs(maps) do
-    add_screen(k, v)
-  end
+  add_screen(maps[1])
+  return tmp
 end
 
 return level

@@ -8,8 +8,6 @@ map.new = function(self, data)
     width = data.w or 1,
     height = data.h or 1,
     size = 0,
-    load_from_string = function(self)
-    end,
     update = function(self, dt)
       for _, v in ipairs(self.objects) do
         v:update(dt)
@@ -22,14 +20,14 @@ map.new = function(self, data)
     end,
     get_cell = function(self, x, y)
       if y then
-        if x <= self.width and y <= self.height and self.array[x] and self.array[x][y] then
-          return self.array[x][y]
+        if x <= self.width and y <= self.height and self.array[y] and self.array[y][x] then
+          return self.array[y][x]
         end
         return nil
       else
         local pos = x
-        if pos.x <= self.width and pos.y <= self.height and self.array[pos.x] and self.array[pos.x][pos.y] then
-          return self.array[pos.x][pos.y]
+        if pos.x <= self.width and pos.y <= self.height and self.array[pos.y] and self.array[pos.y][pos.x] then
+          return self.array[pos.y][pos.x]
         end
         return nil
       end
@@ -68,7 +66,7 @@ map.new = function(self, data)
     end,
     set_cell = function(self, x, y, val)
       if self:valid_cell(x, y) then
-        if not self.array[x][y].type and val.type then
+        if not self.array[y][x].type and val.type then
           local dup = false
           for _, v in ipairs(self.objects) do
             if v == val then
@@ -79,15 +77,16 @@ map.new = function(self, data)
             table.insert(self.objects, val)
           end
         end
-        self.array[x][y] = val
+        self.array[y][x] = val
+        return true
       end
       return false
     end,
     swap_cell = function(self, x1, y1, x2, y2)
       if self:valid_cell(x1, y1) and self:valid_cell(x2, y2) then
-        local tmp = self.array[x1][y1]
-        self.array[x1][y1] = self.array[x2][y2]
-        self.array[x2][y2] = tmp
+        local tmp = self.array[y1][x1]
+        self.array[y1][x1] = self.array[y2][x2]
+        self.array[y2][x2] = tmp
       end
     end
   }

@@ -10,7 +10,16 @@ local ui = {
     level_name = "关卡：",
     move_amount = "移动次数："
   },
-  settings = {}
+  settings = {},
+  editor = {
+    block = "方块",
+    index = "序号",
+    type = "类型",
+    add_child_map = "添加子地图",
+    delete_child_map = "删除子地图",
+    copy = "复制",
+    delete = "删除"
+  }
 }
 
 return ui

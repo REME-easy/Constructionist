@@ -88,7 +88,7 @@ file.load_raw_dir = function(path)
   return items, dirs
 end
 
-file.load_deep_dir = function(path)
+file.load_deep_dir = function(path, category)
   local items = {}
   local files = love.filesystem.getDirectoryItems(path)
 
@@ -107,13 +107,14 @@ file.load_deep_dir = function(path)
         items,
         {
           fullpath = further,
+          category = category,
           path = path .. "/" .. name,
           name = name,
           type = extension
         }
       )
     else
-      local tmp = file.load_deep_dir(further)
+      local tmp = file.load_deep_dir(further, v)
       for _, v2 in ipairs(tmp) do
         table.insert(items, v2)
       end
