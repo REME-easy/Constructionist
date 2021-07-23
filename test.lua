@@ -53,9 +53,9 @@ local function newStack()
 end
 
 -- 输出打印table表 函数
-function test.printTable(...)
+function test.printTable(dep, ...)
   local args = {...}
-  for k, v in pairs(args) do
+  for _, v in pairs(args) do
     local root = v
     if type(root) == "table" then
       local temp = {
@@ -64,16 +64,20 @@ function test.printTable(...)
       }
       local stack = newStack()
       local function table2String(t, depth)
-        stack:push(t)
         if type(depth) == "number" then
           depth = depth + 1
         else
           depth = 1
         end
         local indent = ""
-        for i = 1, depth do
+        for _ = 1, depth do
           indent = indent .. "    "
         end
+        if depth and depth >= dep then
+          table.insert(temp, string.format("%s%s\n", indent, tostring(t)))
+          return
+        end
+        stack:push(t)
         for k, v in pairs(t) do
           local key = tostring(k)
           local typeV = type(v)
@@ -110,10 +114,10 @@ end
 setmetatable(
   test,
   {
-    __call = function(self, t)
+    __call = function(self, t, dep)
       print("\n")
       if type(t) == "table" then
-        self.printTable(t)
+        self.printTable(dep or 16, t)
       else
         self.logger(tostring(t))
       end

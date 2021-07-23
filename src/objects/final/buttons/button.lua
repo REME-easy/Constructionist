@@ -14,7 +14,8 @@ button.new = function(data)
     "process",
     "button",
     function(self, event)
-      local dirs = self:get_parent():block_any_around(self)
+      local _,
+        dirs = self:get_parent():block_any_around(self)
       if not self.toggled and dirs then
         for k, v in pairs(dirs) do
           if v then

@@ -2,6 +2,7 @@ Log = require "test"
 UI = require "lib.loveframes"
 Tw = require "lib.tweens"
 utf8 = require "lib.utf8":init()
+CONST = require "src.global.const"
 Fil = require "src.global.file"
 Ast = require "src.global.asset"
 Set = require "src.global.settings"

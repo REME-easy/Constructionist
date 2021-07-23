@@ -21,4 +21,11 @@ ast.load = function(self)
   Log(self.images)
 end
 
+ast.render_centered_text = function(text, x, y, limit, align)
+  local font = love.graphics.getFont()
+  local tx = x - font:getWidth(text) / 2
+  local ty = y - font:getHeight() / 2
+  love.graphics.printf(text, tx, ty, limit or love.graphics.getWidth(), align or "center")
+end
+
 return ast

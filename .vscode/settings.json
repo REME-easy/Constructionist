@@ -5,5 +5,10 @@
   "Lua.diagnostics.disable": [
     "deprecated",
     "undefined-field"
+  ],
+  "Lua.workspace.checkThirdParty": false,
+  "Lua.runtime.version": "LuaJIT",
+  "Lua.workspace.library": [
+    "${3rd}/love2d/library"
   ]
 }

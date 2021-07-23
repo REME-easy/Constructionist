@@ -5,24 +5,22 @@ local tmp = {
     robot = {child = 2, type = "robot", sym = "R"},
     flag = {type = "collide_flag", sym = "F"},
     wall = {type = "wall", sym = "W"},
-    box = {type = "box", sym = "B"}
+    entrance = {type = "entrance", sym = "E"}
   },
   maps = {
     {
       map = {
-        "_W______WR",
-        "_W___W__W_",
-        "_W___W__W_",
-        "F____W____"
+        "__W_R__P",
+        "__W_WWWW",
+        "________",
+        "________"
       }
     },
     {
       map = {
-        "W_WWW",
-        "W_BP_",
-        "W_PB_",
-        "___B_",
-        "WWW_W"
+        "WWWW",
+        "___E",
+        "____"
       }
     }
   }

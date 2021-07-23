@@ -10,25 +10,28 @@ level.new = function(self, data)
     screens = {},
     actions = {},
     history = {},
-    tips = {},
-    cursor = nil,
+    tip = "",
     focus_screen = 1,
     inspect_mode = false,
-    is_victory = false,
+    is_end = false,
+    move_times = 0,
     --
     update = function(self, dt)
       local actions = self.actions
       for _, v in ipairs(self.screens) do
         v:update(dt)
       end
-      if #actions >= 1 then
-        self.actions[1]()
-        table.remove(self.actions, 1)
+      for i = 1, CONST.UPDATE_TIMES do
+        if #actions >= 1 then
+          self.actions[1]()
+          table.remove(self.actions, 1)
+        end
       end
     end,
     --
     draw = function(self)
       local debug = Con.debug
+
       for _, v in ipairs(self.screens) do
         if v.can_draw then
           v:draw()
@@ -41,26 +44,36 @@ level.new = function(self, data)
         local screen = self.screens[self.cursor.screen]
         self.cursor:draw(screen.cx, screen.cy)
       end
+      if self.tip then
+        local width = love.graphics.getWidth()
+        local height = love.graphics.getHeight()
+        Ast.render_centered_text(self.tip, width / 2, height - 50, width / 2, "center")
+      end
     end,
     --
     add_screen = function(self, data)
       local s = screen:new(data)
-      local screens = self.screens
-      screens[#screens + 1] = s
-      s.id = #screens
+      table.insert(self.screens, s)
+      s.id = #(self.screens)
       return s
     end,
     --
     add_screen_inst = function(self, sc)
-      local screens = self.screens
-      screens[#screens + 1] = sc
-      sc.id = #screens
+      table.insert(self.screens, sc)
+      sc.id = #(self.screens)
       return sc
     end,
     --
     win = function(self)
-      if not self.is_victory then
-        self.is_victory = true
+      if not self.is_end then
+        self.is_end = true
+        Con.set_state(select)
+      end
+    end,
+    --
+    lose = function(self)
+      if not self.is_end then
+        self.is_end = true
         Con.set_state(select)
       end
     end,
@@ -74,18 +87,17 @@ level.new = function(self, data)
     end,
     --
     publish_process = function(self, event)
-      for _, v in ipairs(self.screens) do
-        v:on_process(event)
-      end
+      self.screens[1]:on_process(event)
     end,
     --
     publish_signal = function(self, event)
-      for _, v in ipairs(self.screens) do
-        v:on_signal(event)
-      end
+      self.screens[1]:on_signal(event)
     end,
     --
     key_pressed = function(self, key, isrepeat)
+      if self.is_end or #(self.actions) > 0 then
+        return
+      end
       if self.inspect_mode then
         if key == "toggle" then
           self.inspect_mode = false
@@ -106,6 +118,10 @@ level.new = function(self, data)
           self.screens[cursor.screen]:set_map_position(tar.x, tar.y, cursor, true)
         end
       else
+        -- for _, v in ipairs(self.screens) do
+        --   Log(#(v.groups.map.objects))
+        --   Log("======\n")
+        -- end
         if key == "toggle" then
           self.inspect_mode = true
           local tmp = inspector:new()
@@ -119,24 +135,32 @@ level.new = function(self, data)
         local down = key == "down"
         local any_down = left or right or up or down
 
+        self:publish_signal({type = "clear"})
         if any_down then
           self:publish_signal({type = "move", dir = key})
+          self.move_times = self.move_times + 1
         end
 
         self:publish_process({})
       end
     end
   }
-  tmp:publish_process({})
   return tmp
 end
 
-level.load_from_lua = function(self, lua)
+level.load_from_lua = function(self, lua, text)
   local tmp = self:new()
-  tmp.name = Tr("level", lua.name_id).name
   local b = lua.blocks
   local maps = lua.maps
   local blocks = {_ = {}}
+  if text then
+    if text.name then
+      tmp.name = text.name
+    end
+    if text.tip then
+      tmp.tip = text.tip
+    end
+  end
   for _, v in pairs(b) do
     local val = Lib:new_final_func(v.type)
     if val then
@@ -144,17 +168,17 @@ level.load_from_lua = function(self, lua)
     end
   end
   local index = 0
-  local function add_screen(v)
+  local function add_screen(data)
     index = index + 1
-    local width = #(v.map[1])
-    local height = #v.map
+    local width = #(data.map[1])
+    local height = #data.map
     local draw = index == 1
     -- TODO
     local s = tmp:add_screen({width = width, height = height, draw = true})
     if not draw then
       s:to_position(index - 1)
     end
-    for g, group in pairs(v) do
+    for g, group in pairs(data) do
       for i, row in ipairs(group) do
         for j = 1, #row do
           local c = utf8.sub(row, j, j)
@@ -162,7 +186,7 @@ level.load_from_lua = function(self, lua)
           if tb and tb.func then
             s:add_block(j, i, tb:func({}), g)
             if tb.child then
-              s:add_screen_to_block(j, i, add_screen(maps[tb.child]), g)
+              s:add_screen_to_block(j, i, add_screen(maps[tb.child]), g, true)
             end
           end
         end

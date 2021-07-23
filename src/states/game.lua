@@ -4,7 +4,7 @@ local game = {
   name = "game"
 }
 
-game.set_level = function(self, file)
+game.set_level = function(self, data)
   self.level = level:new()
   -- TODO
   -- local s = self.level:add_screen({width = 10, height = 10, draw = true})
@@ -23,8 +23,9 @@ game.set_level = function(self, file)
   -- s2:to_position(1)
   -- s2:add_block(3, 3, Lib:new_final("mover", {}))
 
-  self.level = level:load_from_lua(file)
-  Log(self.level)
+  self.level = level:load_from_lua(data.level, data.text)
+  self.level:publish_process({})
+  -- Log(self.level)
   return self
 end
 

@@ -14,7 +14,7 @@ block.new = function(data)
     icon = nil,
     parent_map = data.parent_map or 1,
     parent_group = data.parent_group or "map",
-    child_map = data.child_map or -1,
+    child_map = data.child_map,
     is_inspected = false,
     cx = 0,
     cy = 0,
@@ -22,6 +22,7 @@ block.new = function(data)
     mx = 0,
     my = 0,
     size = 0.5,
+    current = 0,
     dir = data.dir or "up",
     can_win = data.can_win or false,
     can_move = data.can_move or false,
@@ -32,15 +33,19 @@ block.new = function(data)
     triggers = {
       process = {},
       signal = {
+        clear = function(self, event)
+          if event.type == "clear" then
+            self.current = 0
+          end
+          return event
+        end,
         move = function(self, event)
-          local dir = event.dir
-          if self.can_move then
-            if dir == "up" or dir == "down" or dir == "left" or dir == "right" then
-              Gam:get_level():add_bot_action(
-                function()
-                  self:try_move(dir)
-                end
-              )
+          if event.type == "move" then
+            local dir = event.dir
+            if self.can_move then
+              if dir == "up" or dir == "down" or dir == "left" or dir == "right" then
+                self:try_move(dir)
+              end
             end
           end
           return event
@@ -48,7 +53,6 @@ block.new = function(data)
       },
       collide = {}
     },
-    current = {},
     update = function(self, dt)
     end,
     --
@@ -59,7 +63,7 @@ block.new = function(data)
       if self.icon then
         love.graphics.draw(Ast.images[self.icon], x, y, self.rot, self.size, self.size)
       end
-      love.graphics.print(string.format("(%d,%d)\n%d", self.mx, self.my, self.uuid), x, y)
+      love.graphics.print(string.format("(%d,%d)\n%d", self.mx, self.my, self.current), x, y)
     end,
     --
     get_parent = function(self)
@@ -104,6 +108,9 @@ block.new = function(data)
     end,
     --
     on_process = function(self, event)
+      if self.child_map then
+        Gam:get_screen(self.child_map):on_process(event)
+      end
       for _, v in pairs(self.triggers.process) do
         event = v(self, event)
       end
@@ -111,6 +118,9 @@ block.new = function(data)
     end,
     --
     on_signal = function(self, event)
+      if self.child_map then
+        Gam:get_screen(self.child_map):on_signal(event)
+      end
       for _, v in pairs(self.triggers.signal) do
         event = v(self, event)
       end
@@ -118,33 +128,49 @@ block.new = function(data)
     end,
     --
     on_collide = function(self, event)
+      if self.child_map then
+        Log(string.format("%s collide %s", self.uuid, event.source.uuid))
+        if self.child_map == self.parent_map then
+          Log(string.format("block[%d] is loop reference!", self.uuid))
+          return event
+        end
+        Gam:get_screen(self.child_map):on_collide(event)
+      end
       for _, v in pairs(self.triggers.collide) do
         event = v(self, event)
       end
       return event
     end,
     --
-    process_current = function(self)
-      if not self.is_insulated then
-        local screen = self:get_parent()
+    produce_current = function(self)
+      local around = self:get_parent():get_around_block(self)
+      for d, b in pairs(around) do
+        b:process_current(d, {self.uuid})
       end
     end,
     --
-    add_current = function(self, amt, dir)
-      local flip = Hep.flip_dir(dir)
-      local current = self.current
-      if not current[dir] then
-        current[dir] = 0
+    process_current = function(self, dir, pass)
+      if self.is_insulated then
+        return
       end
-      if current[flip] then
-        self:add_current(-amt, flip)
-      else
-        current[dir] = current[dir] + amt
-        if current[dir] == 0 then
-          current[dir] = nil
-        elseif current[dir] <= 0 then
-          current[dir] = nil
-          self:add_current(-amt, flip)
+      for _, v in ipairs(pass) do
+        if v == self.uuid then
+          return
+        end
+      end
+      local event = self:on_signal({type = "current"})
+      if event.stop then
+        return
+      end
+      self.current = self.current + 1
+      table.insert(pass, self.uuid)
+      if self.current > 15 then
+        return
+      end
+      for _, v in ipairs(Hep.except_dir(Hep.flip_dir(dir))) do
+        local target = self:get_parent():get_dir_block(self, v)
+        if target and target.uuid then
+          target:process_current(v, pass)
         end
       end
     end,

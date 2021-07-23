@@ -56,7 +56,7 @@ ui_builder.build_series_menu = function()
       local name = txt[k][i] and txt[k][i].name or "[MISSING]"
       local btn = UI.Create("button", category_list):SetText(name):SetY(category_height)
       btn.OnClick = function(obj, x, y)
-        Con.set_state(Gam:set_level(v2))
+        Con.set_state(Gam:set_level({level = v2, text = txt[k][i]}))
       end
       category_height = category_height + 30
     end
@@ -75,13 +75,16 @@ ui_builder.build_game = function()
 
   local top_panel = UI.Create("panel"):SetPos(0, 0):SetSize(width, 30):SetState("game")
 
-  local top_info =
-    UI.Create("text", top_panel):SetPos(5, 5):SetText(
-    {
-      {font = Ast.smallHansFont, color = {0, 0, 0, 1}},
-      txt.level_name .. "      " .. txt.move_amount
-    }
-  )
+  local top_info = UI.Create("text", top_panel):SetPos(5, 5)
+  top_info.Update = function(obj)
+    local level = Gam:get_level()
+    obj:SetText(
+      {
+        {font = Ast.smallHansFont, color = {0, 0, 0, 1}},
+        string.format("%s%s      %s%d", txt.level_name, level.name, txt.move_amount, level.move_times)
+      }
+    )
+  end
 
   local back = UI.Create("button", top_panel):SetPos(width - 55, 5):SetSize(45, 20):SetText("back")
   back.OnClick = function(obj, x, y)

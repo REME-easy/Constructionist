@@ -1,5 +1,9 @@
 local helper = {}
 
+---------------------------------------------------------------------
+-- vector 向量相关
+---------------------------------------------------------------------
+
 helper.to_vec = function(x, y)
   return {x = x, y = y}
 end
@@ -51,6 +55,17 @@ helper.flip_dir = function(dir)
   end
 end
 
+helper.except_dir = function(dir)
+  local dirs = {"up", "down", "left", "right"}
+  for i, v in ipairs(dirs) do
+    if v == dir then
+      table.remove(dirs, i)
+      break
+    end
+  end
+  return dirs
+end
+
 helper.add_dir_v = function(x, y, dir)
   if dir == "up" then
     return {x = x, y = y - 1}
@@ -62,6 +77,10 @@ helper.add_dir_v = function(x, y, dir)
     return {x = x + 1, y = y}
   end
 end
+
+---------------------------------------------------------------------
+-- table 表相关
+---------------------------------------------------------------------
 
 helper.clone = function(object)
   local tmp = {}
@@ -94,3 +113,23 @@ helper.print_map = function(map)
 end
 
 return helper
+
+-- local w = self:get_parent().map_size.x
+-- local h = self:get_parent().map_size.y
+-- local ox = math.floor(w / 2) - self.mx
+-- local oy = math.floor(h / 2) - self.my
+-- if math.abs(ox) > math.abs(oy) then
+--   if ox ~= 0 then
+--     dir = ox < 0 and "right" or "left"
+--   else
+--     dir = false
+--   end
+-- elseif math.abs(ox) < math.abs(oy) then
+--   if oy ~= 0 then
+--     dir = oy < 0 and "down" or "up"
+--   else
+--     dir = false
+--   end
+-- else
+--   dir = false
+-- end

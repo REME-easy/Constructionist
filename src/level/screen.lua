@@ -82,11 +82,11 @@ screen.new = function(self, data)
       local width = love.graphics.getWidth()
 
       self.cx = index <= 3 and 10 - self.size.x or width
-      self.cy = 50 + 160 * (index % 3)
+      self.cy = 50 + 160 * ((index - 1) % 3)
 
       local tx = index <= 3 and 10 or width - self.size.x - 10
 
-      Tw:add_tween(0.2, self, {cx = tx}, "inCubic")
+      Tw:add_tween(1, self, {cx = tx}, "inCubic")
     end,
     --
     get_map = function(self, group)
@@ -101,15 +101,24 @@ screen.new = function(self, data)
       if g then
         val.parent_map = self.id
         val.parent_group = group or "map"
-        self:set_block(x, y, val, false, group or "map")
+        self:set_block(x, y, val, false, group or "map", true)
       end
       return val
     end,
     --
-    remove_block = function(self, x, y, val)
+    remove_block = function(self, x, y, group)
+      local g = self.groups[group or "map"]
+      if g then
+        local val = g:get_cell(x, y)
+        if not val or not val.uuid then
+          return false
+        end
+        self:set_block(x, y, {}, false, group or "map", false)
+        return true
+      end
     end,
     --
-    set_block = function(self, x, y, val, anim, group)
+    set_block = function(self, x, y, val, anim, group, add)
       if not self.groups[group] then
         return
       end
@@ -127,7 +136,9 @@ screen.new = function(self, data)
 
       val.mx = x
       val.my = y
-
+      if add ~= nil then
+        return self.groups[group]:set_cell(x, y, val, add)
+      end
       return self.groups[group]:set_cell(x, y, val)
     end,
     --
@@ -145,14 +156,16 @@ screen.new = function(self, data)
       end
     end,
     --
-    add_screen_to_block = function(self, x, y, sc, group)
+    add_screen_to_block = function(self, x, y, sc, group, not_add)
       local g = self.groups[group]
       if not g then
         return
       end
       local val = g:get_cell(x, y)
       if val.uuid and val.parent_map ~= #(Gam:get_level().screens) then
-        Gam:get_level():add_screen_inst(sc)
+        if not not_add then
+          Gam:get_level():add_screen_inst(sc)
+        end
         sc.parent = val
         val.child_map = sc.id
       end
@@ -161,7 +174,11 @@ screen.new = function(self, data)
     on_process = function(self, event)
       for i, v in pairs(self.groups) do
         for j, v2 in ipairs(v.objects) do
-          v2:on_process(event)
+          Gam:get_level():add_bot_action(
+            function()
+              v2:on_process(event)
+            end
+          )
         end
       end
     end,
@@ -206,11 +223,42 @@ screen.new = function(self, data)
           end
           table.sort(tmp, sorter)
           for _, v2 in ipairs(tmp) do
-            v2:on_signal(event)
+            Gam:get_level():add_bot_action(
+              function()
+                v2:on_signal(event)
+              end
+            )
           end
         else
           for _, v2 in ipairs(v.objects) do
-            v2:on_signal(event)
+            Gam:get_level():add_bot_action(
+              function()
+                v2:on_signal(event)
+              end
+            )
+          end
+        end
+      end
+    end,
+    --
+    on_collide = function(self, event)
+      local dir = event.dir
+      local x = self.map_size.x
+      local y = self.map_size.y
+      if not dir then
+        return
+      end
+      for i, v in pairs(self.groups) do
+        for j, v2 in ipairs(v.objects) do
+          local can =
+            (dir == "left" and v2.mx == x) or (dir == "right" and v2.mx == 1) or (dir == "up" and v2.my == y) or
+            (dir == "down" and v2.my == 1)
+          if can then
+            Gam:get_level():add_bot_action(
+              function()
+                v2:on_collide(event)
+              end
+            )
           end
         end
       end
@@ -223,16 +271,27 @@ screen.new = function(self, data)
       local right = not m:empty_cell(Hep.add_dir(vec, "right"))
       local up = not m:empty_cell(Hep.add_dir(vec, "up"))
       local down = not m:empty_cell(Hep.add_dir(vec, "down"))
-      if left or right or up or down then
-        return {left = left, right = right, up = up, down = down}
+      local any = left or right or up or down
+      if any then
+        return true, {left = left, right = right, up = up, down = down}
       end
-      return nil
+      return false, nil
     end,
     --
-    get_front_block = function(self, val)
-      local vec = Hep.add_dir(Hep.to_vec(val.mx, val.my), val.dir)
-      local m = self:get_map()
-      return m:get_cell(vec)
+    get_dir_block = function(self, val, dir)
+      return self:get_map():get_cell(Hep.add_dir_v(val.mx, val.my, dir or val.dir))
+    end,
+    --
+    get_around_block = function(self, block)
+      local dirs = {"up", "down", "left", "right"}
+      local tmp = {}
+      for _, v in ipairs(dirs) do
+        local target = self:get_map():get_cell(Hep.add_dir_v(block.mx, block.my, v))
+        if target and target.uuid then
+          tmp[v] = target
+        end
+      end
+      return tmp
     end,
     --
     set_map_position = function(self, x, y, val, anim)
@@ -253,6 +312,10 @@ screen.new = function(self, data)
     end
   }
   tmp:to_center()
+  local c = tmp.cell_size
+  local t = tmp.map_size
+  tmp.size.x = c.x * t.x
+  tmp.size.y = c.y * t.y
   setmetatable(
     tmp.groups,
     {

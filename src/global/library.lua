@@ -10,6 +10,7 @@ library.load = function(self)
   Log("loading blocks")
   for _, v in ipairs(files) do
     self.final[v.name] = require(v.path)
+    Log(v.category)
     self.final[v.name].category = v.category
   end
   self.final["block"] = require "src.objects.block"

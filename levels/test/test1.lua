@@ -1,32 +1,20 @@
 local tmp = {
   name_id = "test1",
   blocks = {
-    player = {child = 2, type = "mover", sym = "P"},
-    block1 = {child = 3, type = "box", sym = "A"},
-    wall = {type = "wall", sym = "W"}
+    player = {type = "mover", sym = "P"},
+    block1 = {type = "box", sym = "A"},
+    wall = {type = "wall", sym = "W"},
+    entrance = {type = "entrance", sym = "E"},
+    energy_cube = {type = "energy_cube", sym = "C"}
   },
   maps = {
     {
       map = {
         "P________W",
-        "__W_A____W",
+        "__W_AAA__W",
         "_WW______W",
-        "_________W",
+        "__C______W",
         "_________W"
-      }
-    },
-    {
-      map = {
-        "___",
-        "___",
-        "___"
-      }
-    },
-    {
-      map = {
-        "_________",
-        "_________",
-        "_________"
       }
     }
   }

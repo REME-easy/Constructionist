@@ -32,6 +32,9 @@ map.new = function(self, data)
         return nil
       end
     end,
+    exist_cell = function(self, x, y)
+      return self:valid_cell(x, y) and not self:empty_cell(x, y)
+    end,
     valid_cell = function(self, x, y)
       if y then
         return self:get_cell(x, y) ~= nil
@@ -64,19 +67,30 @@ map.new = function(self, data)
         return true
       end
     end,
-    set_cell = function(self, x, y, val)
+    set_cell = function(self, x, y, val, add)
       if self:valid_cell(x, y) then
-        if not self.array[y][x].type and val.type then
-          local dup = false
-          for _, v in ipairs(self.objects) do
-            if v == val then
-              dup = true
+        if add ~= nil then
+          if add then
+            local dup = false
+            for _, v in ipairs(self.objects) do
+              if v.uuid == val.uuid then
+                dup = true
+              end
+            end
+            if not dup then
+              table.insert(self.objects, val)
+            end
+          else
+            local tmp = self:get_cell(x, y)
+            for i, v in ipairs(self.objects) do
+              if v.uuid == tmp.uuid then
+                table.remove(self.objects, i)
+                break
+              end
             end
           end
-          if not dup then
-            table.insert(self.objects, val)
-          end
         end
+
         self.array[y][x] = val
         return true
       end
